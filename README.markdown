@@ -109,19 +109,3 @@ Follow these steps to set up the Medical Test Report Analyzer:
 | **Pytesseract**  | Performs OCR to extract text from images.                             |
 | **Logging**      | Tracks operations and aids debugging.                                |
 | **Regular Expressions** | Cleans and processes extracted text.                           |
-
-## Contributing
-
-Contributions are encouraged! To contribute:
-- Fork the repository on [GitHub](https://github.com).
-- Create a new branch for your changes.
-- Submit a pull request with a clear description.
-- For bug reports or feature requests, open an issue.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-For questions or feedback, open an issue on [GitHub](https://github.com/armanjscript) or [armannew73@gmail.com].
