@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
-import { Button } from '@/components/ui/button'
-import { Routes } from 'react-router-dom'
+import { Routes, Navigate } from 'react-router-dom'
 import { Route } from 'react-router-dom'
 import CheckAuth from './components/shared/check-auth'
 import AuthLayout from './components/auth/layout'
@@ -23,10 +20,8 @@ import PatientLayout from './components/patient-view/layout'
 import PatientDashboard from './pages/patient-view/dashboard'
 import PatientChatbot from './pages/patient-view/chatbot'
 import FamilyMonitoring from './pages/patient-view/family-monitoring'
-import HealthData from './pages/patient-view/health-data'
 import PatientProfile from './pages/patient-view/profile'
 import ReportScanner from './pages/patient-view/report-scanner'
-import Recommendations from './pages/patient-view/recommendations'
 import NotFound from './pages/not-found'
 import UnauthPage from './pages/unauth-page'
 import { useSelector, useDispatch } from 'react-redux'
@@ -35,7 +30,6 @@ import { Skeleton } from './components/ui/skeleton'
 import DoctorReports from './pages/doctor-view/reports'
 import DoctorChatbot from './pages/doctor-view/chatbot'
 import DoctorSettings from './pages/doctor-view/settings'
-import DoctorNearby from './pages/doctor-view/nearby'
 
 function App() {
 
@@ -55,6 +49,8 @@ function App() {
       
 
       <Routes>
+        {/* redirect base URL to authentication flow; CheckAuth will further redirect logged-in users */}
+        <Route path="/" element={<Navigate to="/auth/login" />} />
         <Route path="/auth" element={
           <CheckAuth isAuthenticated={isAuthenticated} user={user}>
             <AuthLayout/>
@@ -87,7 +83,6 @@ function App() {
           <Route path="reports" element={<DoctorReports/>} />
           <Route path="chatbot" element={<DoctorChatbot/>} />
           <Route path="settings" element={<DoctorSettings/>} />
-          <Route path="nearby" element={<DoctorNearby/>} />
         </Route>
 
         <Route path="/patient" element={
@@ -98,10 +93,8 @@ function App() {
           <Route path="dashboard" element={<PatientDashboard/>} />
           <Route path="chatbot" element={<PatientChatbot/>} />
           <Route path="family-monitoring" element={<FamilyMonitoring/>} />
-          <Route path="health-data" element={<HealthData/>} />
           <Route path="profile" element={<PatientProfile/>} />
           <Route path="report-scanner" element={<ReportScanner/>} />
-          <Route path="recommendations" element={<Recommendations/>} />
         </Route>
         <Route path="*" element={<NotFound/>} />
         <Route path="/unauth-page" element={<UnauthPage/>} />

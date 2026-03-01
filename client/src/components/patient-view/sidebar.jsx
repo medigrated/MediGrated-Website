@@ -15,10 +15,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 const patientSidebarMenuItems = [
   { id: "dashboard", label: "Dashboard", path: "/patient/dashboard", icon: <LayoutDashboard /> },
   { id: "chatbot", label: "AI Chatbot", path: "/patient/chatbot", icon: <BotMessageSquare /> },
-  { id: "recommendations", label: "Nearby", path: "/patient/recommendations", icon: <MapPin /> },
   { id: "report-scanner", label: "Report Scanner", path: "/patient/report-scanner", icon: <FileScan /> },
   { id: "family-monitoring", label: "Family Monitoring", path: "/patient/family-monitoring", icon: <HeartPulse /> },
-  { id: "health-data", label: "Health Data", path: "/patient/health-data", icon: <HeartPulse /> },
   { id: "profile", label: "Profile", path: "/patient/profile", icon: <UserRound /> },
 ];
 

@@ -17,7 +17,8 @@ connectDB();
 
 app.use(
     cors({
-        origin: 'http://localhost:5173',
+        // during development, allow any origin so Vite's port changes don't break CORS
+        origin: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Expires', 'Pragma'],
         credentials: true

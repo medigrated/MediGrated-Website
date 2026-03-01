@@ -16,7 +16,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 
 const doctorSidebarMenuItems = [
   { id: "dashboard", label: "Dashboard", path: "/doctor/dashboard", icon: <LayoutDashboard /> },
-  { id: "nearby", label: "Nearby", path: "/doctor/nearby", icon: <MapPin /> },
   { id: "reports", label: "Reports Review", path: "/doctor/reports", icon: <ClipboardPlus /> },
   { id: "chatbot", label: "Chatbot Assistant", path: "/doctor/chatbot", icon: <BotMessageSquare /> },
   { id: "settings", label: "Profile Settings", path: "/doctor/settings", icon: <Settings /> },

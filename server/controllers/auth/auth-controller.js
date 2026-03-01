@@ -1,7 +1,11 @@
 // server/controllers/auth/auth-controller.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../../models/User');
+
+// in-memory user store used when database is unavailable
+const inMemoryUsers = [];
 
 
 //register
@@ -9,38 +13,57 @@ const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({
-                success: false,
-                message: 'User already exists with this email'
-            });
-        }
-
-        const hashPassword = await bcrypt.hash(password, 12);
-        const newUser = new User({
-            name,
-            email,
-            password: hashPassword,
-            role
-        });
-        await newUser.save();
-
-        //generate JWT token (optional, if you want to log in the user immediately after registration)
-        const token = jwt.sign(
-            { id: newUser._id, role: newUser.role, email: newUser.email },
-            'CLIENT_SECRET_KEY', { expiresIn: '60m' }
-        );
-        res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 60 * 60 * 1000, path: '/' }).json({
-            success: true,
-            message: 'User registered and logged in successfully',
-            user: {
-                id: newUser._id,
-                name: newUser.name,
-                email: newUser.email,
-                role: newUser.role
+        // if DB not connected, fall back to in-memory registration
+        const dbReady = mongoose.connection && mongoose.connection.readyState === 1;
+        if (dbReady) {
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'User already exists with this email'
+                });
             }
-        });
+
+            const hashPassword = await bcrypt.hash(password, 12);
+            const newUser = new User({
+                name,
+                email,
+                password: hashPassword,
+                role
+            });
+            await newUser.save();
+
+            const token = jwt.sign(
+                { id: newUser._id, role: newUser.role, email: newUser.email },
+                'CLIENT_SECRET_KEY', { expiresIn: '60m' }
+            );
+            res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 60 * 60 * 1000, path: '/' }).json({
+                success: true,
+                message: 'User registered and logged in successfully',
+                user: {
+                    id: newUser._id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    role: newUser.role
+                }
+            });
+            return;
+        } else {
+            // use memory store
+            if (inMemoryUsers.find(u => u.email === email)) {
+                return res.status(400).json({ success: false, message: 'User already exists with this email' });
+            }
+            const hashPassword = await bcrypt.hash(password, 12);
+            const newUser = { id: `mem_${Date.now()}`, name, email, password: hashPassword, role };
+            inMemoryUsers.push(newUser);
+            const token = jwt.sign({ id: newUser.id, role: newUser.role, email: newUser.email }, 'CLIENT_SECRET_KEY', { expiresIn: '60m' });
+            res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 60 * 60 * 1000, path: '/' }).json({
+                success: true,
+                message: 'User registered (in-memory) and logged in successfully',
+                user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role }
+            });
+            return;
+        }
         //for directly logging in after registration
         //to just register without logging in, comment out the token generation and cookie setting code above and use the code below instead
         // res.status(201).json({
@@ -69,7 +92,13 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const checkUser = await User.findOne({ email });
+        const dbReady = mongoose.connection && mongoose.connection.readyState === 1;
+        let checkUser;
+        if (dbReady) {
+            checkUser = await User.findOne({ email });
+        } else {
+            checkUser = inMemoryUsers.find(u => u.email === email);
+        }
         if (!checkUser) {
             return res.status(400).json({
                 success: false,
@@ -84,11 +113,9 @@ const loginUser = async (req, res) => {
                 message: 'Incorrect password'
             });
         }
-        //what this does is, it compares the provided password with the hashed password stored in the database using bcrypt's compare method. If they don't match, it returns an error.
-
         //generate JWT token
         const token = jwt.sign(
-            { id: checkUser._id, role: checkUser.role, email: checkUser.email },
+            { id: checkUser._id || checkUser.id, role: checkUser.role, email: checkUser.email },
             'CLIENT_SECRET_KEY', {expiresIn : '60m'}
         );
         //what this does is, it generates a JWT token with the user's id, role, and email as payload, and signs it with a secret key. The token is set to expire in 60 minutes.
