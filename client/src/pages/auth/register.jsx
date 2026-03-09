@@ -8,10 +8,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const initialState = {
-  name : "",
-  role : "",
-  email : "",
-  password : ""
+  name: "",
+  role: "",
+  email: "",
+  password: ""
 };
 
 function AuthRegister() {
@@ -20,20 +20,23 @@ function AuthRegister() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  
+
 
   function onSubmit(e) {
-  e.preventDefault();
-  dispatch(registerUser(formData)).then((data) => {
-    if (data?.payload?.success) {
-      toast.success(data.payload.message || "User registered successfully!");
-      navigate("/auth/login");
-    } else {
-      toast.error(data?.payload?.message || "Registration failed!");
-    }
-  });
-}
-//what this does is, it handles the form submission by dispatching the registerUser action with the form data. It then checks the response to see if the registration was successful or not, and shows a toast notification accordingly. If successful, it navigates the user to the login page.
+    e.preventDefault();
+    dispatch(registerUser(formData)).then((data) => {
+      if (data?.payload?.success) {
+        toast.success(data.payload.message || "User registered successfully!");
+        const role = data?.payload?.user?.role;
+        if (role === 'admin') navigate("/admin/dashboard");
+        else if (role === 'doctor') navigate("/doctor/dashboard");
+        else navigate("/patient/dashboard");
+      } else {
+        toast.error(data?.payload?.message || "Registration failed!");
+      }
+    });
+  }
+  //what this does is, it handles the form submission by dispatching the registerUser action with the form data. It then checks the response to see if the registration was successful or not, and shows a toast notification accordingly. If successful, it navigates the user to the login page.
 
   console.log(formData);
 
