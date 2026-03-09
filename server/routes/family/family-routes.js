@@ -1,11 +1,27 @@
-// server/routes/family/family-routes.js
 const express = require('express');
 const router = express.Router();
-const { getFamily, addFamilyMember, deleteFamilyMember } = require('../../controllers/family/family-controller');
+const {
+    createGroup, joinGroup, getGroups, getGroupDetails,
+    deleteGroup, removeMember, leaveGroup, getMembers,
+    addMedicine, markTaken, skipDose, deleteMedicine, editMedicine, refillMedicine,
+    updatePhone,
+} = require('../../controllers/family/family-controller');
 const { authMiddleware } = require('../../controllers/auth/auth-controller');
 
-router.get('/', authMiddleware, getFamily);
-router.post('/', authMiddleware, addFamilyMember);
-router.delete('/:id', authMiddleware, deleteFamilyMember);
+router.get('/', authMiddleware, getGroups);
+router.post('/', authMiddleware, createGroup);
+router.post('/join', authMiddleware, joinGroup);
+router.get('/:id', authMiddleware, getGroupDetails);
+router.delete('/:id', authMiddleware, deleteGroup);                        // Creator: delete entire group
+router.post('/:id/leave', authMiddleware, leaveGroup);                     // Member: leave (transfers ownership)
+router.delete('/:id/members/:memberId', authMiddleware, removeMember);     // Creator: remove a member
+router.post('/:id/medicine', authMiddleware, addMedicine);
+router.post('/:id/taken/:medId', authMiddleware, markTaken);
+router.post('/:id/skip/:medId', authMiddleware, skipDose);
+router.delete('/:id/medicine/:medId', authMiddleware, deleteMedicine);
+router.put('/:id/medicine/:medId', authMiddleware, editMedicine);
+router.post('/:id/refill/:medId', authMiddleware, refillMedicine);        // Dedicated refill
+router.get('/:id/members', authMiddleware, getMembers);
+router.put('/me/phone', authMiddleware, updatePhone);  // User: save WhatsApp phone number
 
 module.exports = router;
