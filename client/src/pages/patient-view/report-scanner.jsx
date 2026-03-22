@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import "./report-scanner.css";
+import { UploadCloud, FileText, CheckCircle, Copy, Download, ChevronDown, ChevronUp, AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function ReportScanner() {
   const [file, setFile] = useState(null);
@@ -11,6 +12,7 @@ export default function ReportScanner() {
   const [filePreview, setFilePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isDragOver, setIsDragOver] = useState(false);
   const dropRef = useRef(null);
 
   const handleUpload = async () => {
@@ -39,7 +41,6 @@ export default function ReportScanner() {
         setAnalysis("");
         setOcrText("");
       } else {
-        // ensure analysis is a string before rendering; stringify objects
         const raw = response.data.analysis;
         if (raw && typeof raw === "object") {
           setAnalysis(JSON.stringify(raw, null, 2));
@@ -82,27 +83,25 @@ export default function ReportScanner() {
 
   const handleDrop = (e) => {
     e.preventDefault();
+    setIsDragOver(false);
     const dt = e.dataTransfer;
     const f = dt.files && dt.files[0];
     if (f) onFileChange(f);
-    dropRef.current.classList.remove("drag-over");
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    dropRef.current.classList.add("drag-over");
+    setIsDragOver(true);
   };
 
   const handleDragLeave = () => {
-    dropRef.current.classList.remove("drag-over");
+    setIsDragOver(false);
   };
 
   const copyOcr = async () => {
     try {
       await navigator.clipboard.writeText(ocrText || "");
-    } catch (err) {
-      // ignore
-    }
+    } catch (err) {}
   };
 
   const downloadOcr = () => {
@@ -120,7 +119,7 @@ export default function ReportScanner() {
   const highlightParts = (text, term) => {
     if (!term) return [text];
     try {
-      const escaped = term.replace(/[.*+?^${""}()|[\\]\\]/g, "\\$&");
+      const escaped = term.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
       const parts = [];
       let idx = 0;
       const lower = text.toLowerCase();
@@ -142,119 +141,180 @@ export default function ReportScanner() {
   };
 
   return (
-    <div className="app-root">
-      <div className="container">
-        <header className="header">
-          <h1>Medical Report Analyzer</h1>
-          <p className="subtitle">Fast OCR + AI-driven analysis</p>
-        </header>
+    <div className="min-h-[calc(100vh-80px)] w-full py-8 px-4 flex justify-center items-start">
+      <div className="w-full max-w-5xl bg-card text-card-foreground rounded-3xl shadow-large border border-border p-6 md:p-10 animate-fade-in backdrop-blur-xl bg-card/95">
+        
+        {/* Header */}
+        <div className="mb-8 text-center space-y-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-primary bg-clip-text text-transparent inline-block">
+            Medical Report Scanner
+          </h1>
+          <p className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto">
+            Upload your medical reports (PDF or Image) for instant, AI-driven insights and structural OCR extraction.
+          </p>
+        </div>
 
-        <section
-          className="uploader"
-          ref={dropRef}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
-          <div className="file-input">
+        {/* Upload Section */}
+        <div className="space-y-6">
+          <div
+            ref={dropRef}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`relative group flex flex-col items-center justify-center w-full min-h-[160px] border-2 border-dashed rounded-3xl transition-all duration-300 p-6 cursor-pointer
+              ${isDragOver ? "border-primary bg-primary/5 scale-[1.02]" : "border-muted/30 hover:border-primary/50 hover:bg-muted/5"}
+            `}
+          >
             <input
-              id="file"
+              id="file-upload"
               type="file"
+              className="hidden"
               accept="image/*,.pdf"
               onChange={(e) => onFileChange(e.target.files[0])}
             />
-            <label htmlFor="file" className="file-label">
-              <div className="file-label-inner">
-                <div className="file-meta">
-                  <strong>{file ? file.name : "Choose a PDF or image file"}</strong>
-                  <span className="muted">Drag & drop supported</span>
+            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-full cursor-pointer gap-4">
+              {filePreview ? (
+                <div className="relative">
+                  <img src={filePreview} alt="preview" className="h-24 w-24 object-cover rounded-2xl shadow-md border border-border" />
+                  <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
                 </div>
-                {filePreview ? (
-                  <img src={filePreview} alt="preview" className="thumb" />
-                ) : (
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="file-icon">
-                    <path d="M12 2v10" stroke="#2563eb" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M5 12l7-7 7 7" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
+              ) : (
+                <div className="p-4 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform duration-300">
+                  <UploadCloud className="w-8 h-8" />
+                </div>
+              )}
+              
+              <div className="text-center space-y-1">
+                <p className="text-base font-semibold text-foreground">
+                  {file ? file.name : "Click to upload or drag and drop"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  SVG, PNG, JPG, or PDF (MAX 15MB)
+                </p>
               </div>
             </label>
           </div>
 
-          <div className="actions">
-            <button className="primary" onClick={handleUpload} disabled={loading}>
-              {loading ? "Analyzing..." : "Analyze Report"}
-            </button>
-            <button
-              className="ghost"
-              onClick={() => {
-                setFile(null);
-                setAnalysis("");
-                setOcrText("");
-                if (filePreview) {
-                  URL.revokeObjectURL(filePreview);
-                }
-                setFilePreview(null);
-              }}
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Button
+              onClick={handleUpload}
+              disabled={loading || !file}
+              className="h-12 px-8 rounded-full bg-gradient-primary text-white font-bold tracking-wide shadow-glow-primary hover:shadow-lg transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 min-w-[200px]"
             >
-              Reset
-            </button>
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  Analyzing...
+                </span>
+              ) : (
+                "Analyze Report"
+              )}
+            </Button>
+            
+            {(file || analysis || ocrText) && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFile(null);
+                  setAnalysis("");
+                  setOcrText("");
+                  if (filePreview) URL.revokeObjectURL(filePreview);
+                  setFilePreview(null);
+                }}
+                className="h-12 px-6 rounded-full font-semibold border-border hover:bg-destructive/10 hover:text-destructive transition-colors"
+                disabled={loading}
+              >
+                Reset
+              </Button>
+            )}
           </div>
 
-          {error && <div className="error">{error}</div>}
-        </section>
+          {error && (
+            <div className="flex items-center gap-2 p-4 mt-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-2xl animate-shake">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
+        </div>
 
-        <section className="results">
-          <div className="pane ocr-pane">
-            <div className="pane-header" onClick={() => setOcrOpen((s) => !s)}>
-              <h2>Extracted Text (OCR)</h2>
-              <div className="pane-actions">
-                <input
-                  placeholder="Search OCR..."
-                  value={searchTerm}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <button className="icon-btn" title="Copy" onClick={(e) => { e.stopPropagation(); copyOcr(); }}>
-                  Copy
-                </button>
-                <button className="icon-btn" title="Download" onClick={(e) => { e.stopPropagation(); downloadOcr(); }}>
-                  Download
-                </button>
-                <button className={`chev ${ocrOpen ? "open" : ""}`} aria-hidden>
-                  ▾
-                </button>
+        {/* Results Section */}
+        {(analysis || ocrText) && (
+          <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up">
+            
+            {/* OCR PANE */}
+            <div className="flex flex-col bg-muted/20 border border-border rounded-3xl overflow-hidden shadow-soft">
+              <div 
+                className="flex items-center justify-between p-4 bg-muted/30 border-b border-border cursor-pointer hover:bg-muted/40 transition-colors"
+                onClick={() => setOcrOpen(!ocrOpen)}
+              >
+                <div className="flex items-center gap-2 font-bold text-foreground mx-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Extracted Text (OCR)
+                </div>
+                <div className="flex items-center gap-2">
+                  {ocrOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+                </div>
+              </div>
+
+              {ocrOpen && (
+                <div className="p-4 flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      placeholder="Search text..."
+                      value={searchTerm}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="flex-1 px-4 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                    />
+                    <Button variant="outline" size="icon" onClick={copyOcr} className="rounded-xl border-border bg-background hover:bg-muted" title="Copy to clipboard">
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={downloadOcr} className="rounded-xl border-border bg-background hover:bg-muted" title="Download Text">
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="flex-1 bg-background border border-border rounded-2xl p-4 min-h-[300px] max-h-[500px] overflow-y-auto font-mono text-sm leading-relaxed text-foreground/80 shadow-inner">
+                    {ocrText ? (
+                        highlightParts(ocrText, searchTerm).map((part, i) =>
+                          typeof part === "string" ? (
+                            <span key={i}>{part}</span>
+                          ) : (
+                            <mark key={part.key} className="bg-amber-200 text-amber-900 px-1 rounded-sm">
+                              {part.match}
+                            </mark>
+                          )
+                        )
+                    ) : (
+                      <p className="text-muted-foreground italic text-center mt-10">No OCR extracted.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* AI ANALYSIS PANE */}
+            <div className="flex flex-col bg-muted/20 border border-border rounded-3xl overflow-hidden shadow-soft">
+              <div className="flex items-center gap-2 p-4 bg-muted/30 border-b border-border">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-bold text-foreground">AI Medical Analysis</span>
+              </div>
+              <div className="p-4 flex-1">
+                <div className="w-full h-full min-h-[300px] max-h-[500px] overflow-y-auto bg-gradient-to-b from-background to-background/50 border border-border rounded-2xl p-5 text-sm leading-relaxed text-foreground shadow-inner whitespace-pre-wrap">
+                  {analysis || <span className="text-muted-foreground italic">Analysis results will appear here...</span>}
+                </div>
               </div>
             </div>
 
-            <div className={`ocr-collapse ${ocrOpen ? "open" : ""}`}>
-              {ocrText ? (
-                <pre className="ocr-box">
-                  {highlightParts(ocrText, searchTerm).map((part, i) =>
-                    typeof part === "string" ? (
-                      part
-                    ) : (
-                      <mark key={part.key} className="highlight">
-                        {part.match}
-                      </mark>
-                    )
-                  )}
-                </pre>
-              ) : (
-                <div className="placeholder">No OCR output yet.</div>
-              )}
-            </div>
           </div>
+        )}
 
-          <div className="pane">
-            <h2>AI Analysis</h2>
-            <pre className="analysis-box">{analysis || "No analysis yet."}</pre>
-          </div>
-        </section>
+        <div className="mt-8 text-center text-xs text-muted-foreground">
+          <p>Disclaimer: This tool provides AI-driven insights and is not a substitute for professional medical advice. Always consult a licensed doctor.</p>
+        </div>
 
-        <footer className="footer">
-          Disclaimer: This tool is for informational purposes only. Consult a licensed doctor for medical advice.
-        </footer>
       </div>
     </div>
   );

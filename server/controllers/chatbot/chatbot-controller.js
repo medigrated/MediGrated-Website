@@ -22,7 +22,7 @@ const postMessage = async (req, res) => {
     });
 
     // Generate AI reply using Groq LLaMA 3.1
-    const replyText = await getAIReply(message);
+    const replyText = await getAIReply(message, user.id);
 
     // Save bot message to DB
     const botMsg = await Message.create({

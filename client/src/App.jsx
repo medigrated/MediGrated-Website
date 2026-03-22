@@ -14,8 +14,11 @@ import AdminLocations from './pages/admin-view/locations'
 import AdminChatbot from './pages/admin-view/chatbot'
 import AdminLogs from './pages/admin-view/logs'
 import AdminSettings from './pages/admin-view/settings'
+import AdminProfile from './pages/admin-view/profile'
+import ActivityLogs from './pages/admin-view/activities'
 import DoctorLayout from './components/doctor-view/layout'
 import DoctorDashboard from './pages/doctor-view/dashboard'
+import DoctorProfile from './pages/doctor-view/profile'
 import PatientLayout from './components/patient-view/layout'
 import PatientDashboard from './pages/patient-view/dashboard'
 import PatientChatbot from './pages/patient-view/chatbot'
@@ -48,7 +51,7 @@ function App() {
   }
 
   return (
-    <div className='flex flex-col overflow-hidden bg-white'>
+    <div className='flex flex-col overflow-hidden bg-background text-foreground'>
 
 
       <Routes>
@@ -75,6 +78,8 @@ function App() {
           <Route path="chatbot" element={<AdminChatbot />} />
           <Route path="logs" element={<AdminLogs />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="profile" element={<AdminProfile />} />
+          <Route path="activities" element={<ActivityLogs />} />
         </Route>
 
         <Route path="/doctor" element={
@@ -87,6 +92,7 @@ function App() {
           <Route path="chatbot" element={<DoctorChatbot />} />
           <Route path="settings" element={<DoctorSettings />} />
           <Route path="nearby" element={<DoctorNearby />} />
+          <Route path="profile" element={<DoctorProfile />} />
         </Route>
 
         <Route path="/patient" element={

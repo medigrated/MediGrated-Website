@@ -7,8 +7,10 @@ const User = require('../../models/User');
 
 const getUser = async (userId) => (userId ? User.findById(userId) : null);
 
-const logActivity = async (groupId, userId, userName, action, status = 'consumed') => {
-  const log = new ActivityLog({ groupId, userId, userName, action, status });
+const logActivity = async (groupId, userId, userName, action, status = 'consumed', timestamp = null) => {
+  const payload = { groupId, userId, userName, action, status };
+  if (timestamp) payload.timestamp = timestamp;
+  const log = new ActivityLog(payload);
   await log.save();
   return log;
 };
@@ -175,7 +177,7 @@ const getGroupDetails = async (req, res) => {
     const group = await Group.findById(id);
     if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
 
-    const medicines = await Medicine.find({ groupId: id }).sort({ createdAt: -1 });
+    const medicines = await Medicine.find({ groupId: id }).populate('addedBy', 'name').sort({ createdAt: -1 });
     const now = new Date();
     const currentTimeStr = now.toTimeString().substring(0, 5); // "HH:MM"
 
@@ -198,6 +200,14 @@ const getGroupDetails = async (req, res) => {
         const schedDate = new Date(); schedDate.setHours(hour, min, 0, 0);
 
         if (schedDate < now) {
+          // If the medicine was created after this dose's scheduled time today, skip it entirely.
+          // This prevents false "missed" alerts for doses that occurred before the medicine was registered.
+          const createdTime = med.createdAt ? new Date(med.createdAt).getTime() : 0;
+          const schedTime = schedDate.getTime();
+          if (createdTime > schedTime) {
+            continue;
+          }
+
           // ── Missed-dose threshold ──────────────────────────────────────────
           // A dose is "missed" only once we're 2 hours before the NEXT dose.
           // For the last dose of the day, it's missed 2 hours after the dose time.
@@ -261,16 +271,65 @@ const addMedicine = async (req, res) => {
   try {
     const userId = req.user?.id;
     const { id: groupId } = req.params;
-    const { name, totalAmount, timesPerDay, schedule, notes } = req.body;
+    const { name, totalAmount, timesPerDay, schedule, notes, alreadyTakenFirstDose } = req.body;
 
     const group = await Group.findById(groupId);
     const finalUserId = userId || group?.creator;
     const user = await getUser(userId);
 
-    const medicine = new Medicine({ groupId, name, totalAmount, remainingAmount: totalAmount, timesPerDay, schedule, notes: notes || '', addedBy: finalUserId });
+    const initialAmount = parseInt(totalAmount);
+    const firstDoseTaken = alreadyTakenFirstDose === true || alreadyTakenFirstDose === 'true';
+    const startingRemaining = firstDoseTaken ? Math.max(0, initialAmount - 1) : initialAmount;
+
+    let logTime = new Date();
+    const validSchedule = (schedule || []).filter(t => t && t.trim() && t.includes(':'));
+    
+    if (firstDoseTaken && validSchedule.length > 0) {
+      const now = logTime.getTime();
+      let nearestTime = null;
+      let smallestDiff = Infinity;
+
+      for (const t of validSchedule) {
+        const [h, m] = t.split(':').map(Number);
+        const candidate = new Date();
+        candidate.setHours(h, m, 0, 0);
+        const diff = Math.abs(now - candidate.getTime());
+        if (diff < smallestDiff) {
+          smallestDiff = diff;
+          nearestTime = t;
+        }
+      }
+
+      if (nearestTime) {
+        const [h, m] = nearestTime.split(':').map(Number);
+        logTime.setHours(h, m, 0, 0);
+      }
+    }
+
+    // Format nearest dose time for log text (e.g. "8:45 PM")
+    const doseTimeLabel = firstDoseTaken
+      ? logTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+      : null;
+
+    const medicine = new Medicine({ 
+      groupId, name, totalAmount: initialAmount, remainingAmount: startingRemaining, 
+      timesPerDay, schedule, notes: notes || '', addedBy: finalUserId 
+    });
+    
+    if (firstDoseTaken) {
+      medicine.lastTakenAt = logTime;
+    }
+    
     await medicine.save();
 
+    // Use current time for activity log (so it appears at top of feed)
     await logActivity(groupId, finalUserId, user?.name || 'Preview User', `added medicine ${name}`);
+    
+    if (firstDoseTaken) {
+      await logActivity(groupId, finalUserId, user?.name || 'Preview User',
+        `marked ${name} as consumed (${doseTimeLabel} dose)`, 'consumed');
+    }
+
     return res.json({ success: true, medicine });
   } catch (err) {
     console.error('addMedicine error', err);

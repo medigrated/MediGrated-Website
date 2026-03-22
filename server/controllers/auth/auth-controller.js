@@ -182,9 +182,129 @@ const authMiddleware = (req, res, next) => {
 };
 
 
+//update profile
+const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const updateData = req.body;
+
+        // Remove sensitive fields that shouldn't be updated through this endpoint
+        delete updateData.password;
+        delete updateData.email; // Email changes might need special handling
+        delete updateData.role; // Role changes should be admin only
+
+        const dbReady = mongoose.connection && mongoose.connection.readyState === 1;
+        if (dbReady) {
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { $set: updateData },
+                { new: true, runValidators: true }
+            ).select('-password');
+
+            if (!updatedUser) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Profile updated successfully',
+                user: updatedUser
+            });
+        } else {
+            // In-memory update for development
+            const userIndex = inMemoryUsers.findIndex(u => u.id === userId);
+            if (userIndex === -1) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            inMemoryUsers[userIndex] = { ...inMemoryUsers[userIndex], ...updateData };
+            const { password, ...userWithoutPassword } = inMemoryUsers[userIndex];
+
+            res.status(200).json({
+                success: true,
+                message: 'Profile updated successfully',
+                user: userWithoutPassword
+            });
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
+//change password
+const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Current password and new password are required'
+            });
+        }
+
+        const dbReady = mongoose.connection && mongoose.connection.readyState === 1;
+        let user;
+        if (dbReady) {
+            user = await User.findById(userId);
+        } else {
+            user = inMemoryUsers.find(u => u.id === userId);
+        }
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Verify current password
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
+        }
+
+        // Hash new password
+        const hashPassword = await bcrypt.hash(newPassword, 12);
+
+        if (dbReady) {
+            await User.findByIdAndUpdate(userId, { password: hashPassword });
+        } else {
+            inMemoryUsers.find(u => u.id === userId).password = hashPassword;
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Password changed successfully'
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     logoutUser,
-    authMiddleware
+    authMiddleware,
+    updateProfile,
+    changePassword
 };

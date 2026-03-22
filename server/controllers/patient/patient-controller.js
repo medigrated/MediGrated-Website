@@ -1,25 +1,40 @@
 // server/controllers/patient/patient-controller.js
-// Minimal test controller — returns example dashboard data
+const Report = require('../../models/Report');
+const Group = require('../../models/Group');
+const mongoose = require('mongoose');
 
 const getPatientDashboard = async (req, res) => {
   try {
-    // if auth present, you can read req.user, otherwise fallback to query param
-    const userId = req.user?.id || req.query?.userId || 'test-user';
+    const userId = req.user?.id || req.query?.userId;
+
+    // If userId exists and is a valid ObjectId, fetch real data. Otherwise return empty structure.
+    let reports = [];
+    let groups = [];
+    
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      reports = await Report.find({ user: userId }).sort({ createdAt: -1 }).limit(5);
+      groups = await Group.find({ members: userId }).limit(3);
+    }
 
     const data = {
-      healthScore: 82,
-      recentReports: [
-        { id: 'r1', title: 'Blood Test - CBC', date: new Date().toISOString() },
-        { id: 'r2', title: 'Chest X-Ray', date: new Date(Date.now()-86400000).toISOString() }
-      ],
-      family: [
-        { id: 'f1', name: 'Mom', relation: 'mother', latestStatus: 'BP: 130/80' }
-      ],
-      recommendations: [
-        "Follow up on iron levels in 2 weeks",
-        "Keep hydrated and rest"
-      ],
-      quickSummary: "Basic summary (mock). Replace with real logic later."
+      healthScore: reports.length > 0 ? Math.min(100, 75 + (reports.length * 2)) : 0,
+      recentReports: reports.map(r => ({
+        id: r._id,
+        title: r.filename || r.reportType || 'Medical Report',
+        date: r.createdAt ? r.createdAt.toISOString() : new Date().toISOString()
+      })),
+      family: groups.map(g => ({
+        id: g._id,
+        name: g.name,
+        relation: 'Family Group',
+        latestStatus: `Created: ${g.createdAt.toLocaleDateString()}`
+      })),
+      recommendations: reports.length > 0 
+        ? ["Stay hydrated and maintain routine checks", "Review your latest report insights"]
+        : ["No recent history. Upload a report to start getting AI insights."],
+      quickSummary: reports.length > 0 
+        ? `You have ${reports.length} report(s) on file. Your dashboard is tracking your metrics.` 
+        : "Welcome to MediGrated! Add a report or join a family group to start."
     };
 
     res.json({ success: true, data });

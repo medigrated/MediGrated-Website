@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // small presentational card
 function StatCard({ title, value, note }) {
   return (
-    <div className="bg-white shadow-sm rounded-lg p-4 flex flex-col">
+    <div className="bg-card text-card-foreground shadow-sm rounded-lg p-4 flex flex-col">
       <div className="text-sm text-muted-foreground">{title}</div>
       <div className="text-2xl font-semibold mt-2">{value ?? "—"}</div>
       {note && <div className="text-xs text-muted-foreground mt-1">{note}</div>}
@@ -97,7 +97,7 @@ export default function PatientDashboard() {
   // if user not present
   if (!user?.id) {
     return (
-      <div className="p-6 bg-white rounded shadow-sm">
+      <div className="p-6 bg-card text-card-foreground rounded shadow-sm">
         <h2 className="text-xl font-semibold">Patient Dashboard</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           You are not signed in. Please <Link to="/auth/login" className="text-primary">log in</Link> to view your dashboard.
@@ -132,7 +132,7 @@ export default function PatientDashboard() {
 
       {/* Quick summary + recommendations */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white shadow-sm rounded-lg p-4">
+        <div className="lg:col-span-2 bg-card text-card-foreground shadow-sm rounded-lg p-4">
           <h3 className="text-lg font-semibold">Quick Summary</h3>
           <p className="mt-2 text-sm text-muted-foreground">
             {quickSummary || "No summary available yet."}
@@ -154,7 +154,7 @@ export default function PatientDashboard() {
         </div>
 
         {/* Right column: Recent reports list */}
-        <div className="bg-white shadow-sm rounded-lg p-4">
+        <div className="bg-card text-card-foreground shadow-sm rounded-lg p-4">
           <h3 className="text-lg font-semibold">Recent Reports</h3>
           <div className="mt-3 space-y-3">
             {recentReports.length ? (
@@ -182,7 +182,7 @@ export default function PatientDashboard() {
       </div>
 
       {/* Family monitoring preview */}
-      <div className="bg-white shadow-sm rounded-lg p-4">
+      <div className="bg-card text-card-foreground shadow-sm rounded-lg p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Family Monitoring</h3>
           <Link to="/patient/family-monitoring" className="text-sm text-primary hover:underline">Manage</Link>

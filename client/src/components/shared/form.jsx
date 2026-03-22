@@ -23,21 +23,21 @@ function SharedForm({formControls, formData, setFormData, onSubmit, buttonText})
                         ...formData,
                         [getControlItem.name]: event.target.value
                     })}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-10 px-3 text-sm rounded-lg border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 hover:bg-white/80"
                 />
                 );
                 break;
             case 'select':
                 element = (
                 <Select onValueChange={(value) => setFormData({...formData, [getControlItem.name]: value})} value={value} >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full h-10 text-sm rounded-lg border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 hover:bg-white/80">
                         <SelectValue placeholder={getControlItem.placeholder} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white/95 backdrop-blur-xl border-white/20">
                         {
                             getControlItem.options &&
-                            getControlItem.options.length > 0 ? 
-                            getControlItem.options.map(optionItem => <SelectItem key={optionItem.id} value={optionItem.value}>{optionItem.label}</SelectItem>) : null
+                            getControlItem.options.length > 0 ?
+                            getControlItem.options.map(optionItem => <SelectItem key={optionItem.id} value={optionItem.value} className="hover:bg-primary/10">{optionItem.label}</SelectItem>) : null
                         }
 
                     </SelectContent>
@@ -52,7 +52,7 @@ function SharedForm({formControls, formData, setFormData, onSubmit, buttonText})
                     placeholder={getControlItem.placeholder}
                     id={getControlItem.id}
                     value={value}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 hover:bg-white/80 resize-none"
                      onChange = {event => setFormData({
                         ...formData,
                         [getControlItem.name]: event.target.value
@@ -73,19 +73,20 @@ function SharedForm({formControls, formData, setFormData, onSubmit, buttonText})
                         ...formData,
                         [getControlItem.name]: event.target.value
                     })}
+                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 hover:bg-white/80"
                 />
                 );
                 break;
         }
         return element;
-    }   
+    }
 
   return (
-    <form onSubmit={onSubmit}>
-        <div className="flex flex-col gap-3">
+    <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-4">
             {
-                formControls.map(controlItem => <div className="grid w-full gap-1.5" key={controlItem.name}>
-                    <Label className="mb-1"> {controlItem.label} </Label>
+                formControls.map(controlItem => <div className="space-y-2" key={controlItem.name}>
+                    <Label className="text-xs font-medium text-foreground\">{controlItem.label}</Label>
                     {
                         renderInputsByComponentType(controlItem)
                     }
@@ -93,7 +94,12 @@ function SharedForm({formControls, formData, setFormData, onSubmit, buttonText})
             }
 
         </div>
-        <Button type="submit" className="mt-2 w-full">{buttonText || "Submit"}</Button>
+        <Button
+            type="submit"
+            className="w-full h-10 bg-gradient-primary hover:opacity-90 text-white font-semibold text-sm rounded-lg shadow-medium hover:shadow-large transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        >
+            {buttonText || "Submit"}
+        </Button>
     </form>
   );
 }

@@ -9,10 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { authAPI } from '@/lib/api';
 import { addActivity } from '@/store/activitySlice';
 import { ACTIVITY_TYPES } from '@/lib/activityLogger';
-import { Mail, Phone, MapPin, Heart, Edit2, Save, X, Lock, Camera, AlertCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Briefcase, Edit2, Save, X, Lock, Camera, Award } from 'lucide-react';
 import { ActivityFeed } from '@/components/shared/activity-feed';
 
-function PatientProfile() {
+export default function DoctorProfile() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
@@ -20,15 +20,14 @@ function PatientProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [changePasswordMode, setChangePasswordMode] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.name || 'John Patient',
-    email: user?.email || 'patient@medigrated.com',
+    name: user?.name || 'Dr. John Doe',
+    email: user?.email || 'doctor@medigrated.com',
     phone: user?.phone || '+1234567890',
-    age: user?.age || '35',
-    bloodType: user?.bloodType || 'O+',
-    allergies: user?.allergies || 'Penicillin',
-    medicalHistory: user?.medicalHistory || 'Hypertension',
-    emergencyContact: user?.emergencyContact || '+1987654321',
-    location: user?.location || 'New York',
+    specialization: user?.specialization || 'General Practitioner',
+    licenseNumber: user?.licenseNumber || 'LIC-2024-001',
+    bio: user?.bio || 'Experienced medical professional',
+    clinic: user?.clinic || 'Medical Center',
+    experience: user?.experience || '10+ years',
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -60,11 +59,10 @@ function PatientProfile() {
         name: formData.name,
         phone: formData.phone,
         location: formData.location,
-        age: parseInt(formData.age) || null,
-        bloodType: formData.bloodType,
-        allergies: formData.allergies,
-        medicalHistory: formData.medicalHistory,
-        emergencyContact: formData.emergencyContact,
+        specialization: formData.specialization,
+        licenseNumber: formData.licenseNumber,
+        experience: parseInt(formData.experience) || null,
+        clinic: formData.clinic,
       };
 
       await authAPI.updateProfile(profileData);
@@ -72,10 +70,10 @@ function PatientProfile() {
       dispatch(
         addActivity({
           type: ACTIVITY_TYPES.PROFILE_UPDATE,
-          details: `Updated health profile information`,
+          details: `Updated profile information`,
           user: formData.name,
           userName: formData.name,
-          userRole: 'patient',
+          userRole: 'doctor',
         })
       );
       setIsEditing(false);
@@ -104,7 +102,7 @@ function PatientProfile() {
           details: `Changed account password`,
           user: formData.name,
           userName: formData.name,
-          userRole: 'patient',
+          userRole: 'doctor',
         })
       );
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -122,7 +120,7 @@ function PatientProfile() {
         type: ACTIVITY_TYPES.LOGOUT,
         user: formData.name,
         userName: formData.name,
-        userRole: 'patient',
+        userRole: 'doctor',
       })
     );
     navigate('/auth/login');
@@ -132,12 +130,12 @@ function PatientProfile() {
     <div className="space-y-6">
       {/* Profile Header */}
       <div className="
-        bg-gradient-accent
+        bg-gradient-secondary
         rounded-lg p-8 text-white
         relative overflow-hidden
       ">
         <div className="absolute top-0 right-0 opacity-10">
-          <Heart className="w-40 h-40" />
+          <Award className="w-40 h-40" />
         </div>
         <div className="relative z-10">
           <div className="flex items-center gap-4 mb-4">
@@ -146,17 +144,14 @@ function PatientProfile() {
               bg-white/20 flex items-center justify-center
               text-3xl
             ">
-              🧑‍🦱
+              👨‍⚕️
             </div>
             <div>
               <h1 className="text-3xl font-bold">{formData.name}</h1>
-              <p className="text-white/80">Age: {formData.age} years</p>
+              <p className="text-white/80">{formData.specialization}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-white/90">
-            <AlertCircle className="w-4 h-4" />
-            <p>Blood Type: <span className="font-bold">{formData.bloodType}</span></p>
-          </div>
+          <p className="text-white/90 max-w-2xl">{formData.bio}</p>
         </div>
       </div>
 
@@ -170,7 +165,7 @@ function PatientProfile() {
           ">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                Health Profile
+                Professional Information
               </h2>
               {!isEditing && (
                 <Button
@@ -243,115 +238,94 @@ function PatientProfile() {
                 )}
               </div>
 
-              {/* Age */}
-              <div>
-                <Label className="text-gray-700 dark:text-gray-300">Age</Label>
-                {isEditing ? (
-                  <Input
-                    name="age"
-                    type="number"
-                    value={formData.age}
-                    onChange={handleInputChange}
-                    className="mt-2"
-                  />
-                ) : (
-                  <p className="mt-2 text-gray-900 dark:text-gray-100 font-medium">
-                    {formData.age} years
-                  </p>
-                )}
-              </div>
-
-              {/* Blood Type */}
+              {/* Specialization */}
               <div>
                 <Label className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                  <Heart className="w-4 h-4" />
-                  Blood Type
+                  <Briefcase className="w-4 h-4" />
+                  Specialization
                 </Label>
                 {isEditing ? (
                   <Input
-                    name="bloodType"
-                    value={formData.bloodType}
-                    onChange={handleInputChange}
-                    className="mt-2"
-                  />
-                ) : (
-                  <p className="mt-2 text-gray-900 dark:text-gray-100 font-bold">
-                    {formData.bloodType}
-                  </p>
-                )}
-              </div>
-
-              {/* Emergency Contact */}
-              <div>
-                <Label className="text-gray-700 dark:text-gray-300">Emergency Contact</Label>
-                {isEditing ? (
-                  <Input
-                    name="emergencyContact"
-                    value={formData.emergencyContact}
+                    name="specialization"
+                    value={formData.specialization}
                     onChange={handleInputChange}
                     className="mt-2"
                   />
                 ) : (
                   <p className="mt-2 text-gray-900 dark:text-gray-100 font-medium">
-                    {formData.emergencyContact}
+                    {formData.specialization}
                   </p>
                 )}
               </div>
 
-              {/* Location */}
+              {/* License Number */}
+              <div>
+                <Label className="text-gray-700 dark:text-gray-300">License Number</Label>
+                {isEditing ? (
+                  <Input
+                    name="licenseNumber"
+                    value={formData.licenseNumber}
+                    onChange={handleInputChange}
+                    className="mt-2"
+                  />
+                ) : (
+                  <p className="mt-2 text-gray-900 dark:text-gray-100 font-medium">
+                    {formData.licenseNumber}
+                  </p>
+                )}
+              </div>
+
+              {/* Experience */}
+              <div>
+                <Label className="text-gray-700 dark:text-gray-300">Experience</Label>
+                {isEditing ? (
+                  <Input
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleInputChange}
+                    className="mt-2"
+                  />
+                ) : (
+                  <p className="mt-2 text-gray-900 dark:text-gray-100 font-medium">
+                    {formData.experience}
+                  </p>
+                )}
+              </div>
+
+              {/* Clinic */}
               <div className="md:col-span-2">
                 <Label className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  Location
+                  Clinic/Hospital
                 </Label>
                 {isEditing ? (
                   <Input
-                    name="location"
-                    value={formData.location}
+                    name="clinic"
+                    value={formData.clinic}
                     onChange={handleInputChange}
                     className="mt-2"
                   />
                 ) : (
                   <p className="mt-2 text-gray-900 dark:text-gray-100 font-medium">
-                    {formData.location}
+                    {formData.clinic}
                   </p>
                 )}
               </div>
 
-              {/* Allergies */}
+              {/* Bio */}
               <div className="md:col-span-2">
-                <Label className="text-gray-700 dark:text-gray-300">Allergies</Label>
+                <Label className="text-gray-700 dark:text-gray-300">Bio</Label>
                 {isEditing ? (
                   <Textarea
-                    name="allergies"
-                    value={formData.allergies}
-                    onChange={handleInputChange}
-                    className="mt-2"
-                    rows={2}
-                    placeholder="List any allergies (separated by commas)"
-                  />
-                ) : (
-                  <p className="mt-2 text-gray-900 dark:text-gray-100 font-medium">
-                    {formData.allergies}
-                  </p>
-                )}
-              </div>
-
-              {/* Medical History */}
-              <div className="md:col-span-2">
-                <Label className="text-gray-700 dark:text-gray-300">Medical History</Label>
-                {isEditing ? (
-                  <Textarea
-                    name="medicalHistory"
-                    value={formData.medicalHistory}
+                    name="bio"
+                    value={formData.bio}
                     onChange={handleInputChange}
                     className="mt-2"
                     rows={3}
-                    placeholder="List medical conditions or past treatments"
                   />
                 ) : (
                   <p className="mt-2 text-gray-900 dark:text-gray-100 font-medium">
-                    {formData.medicalHistory}
+                    {formData.bio}
                   </p>
                 )}
               </div>
@@ -453,29 +427,6 @@ function PatientProfile() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Quick Health Info */}
-          <Card className="
-            bg-white dark:bg-slate-900
-            border-gray-200 dark:border-slate-700
-            p-6
-          ">
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">Health Summary</h3>
-            <div className="space-y-3">
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Allergies</p>
-                <p className="font-bold text-red-600 dark:text-red-400">{formData.allergies}</p>
-              </div>
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Blood Type</p>
-                <p className="font-bold text-yellow-600 dark:text-yellow-400">{formData.bloodType}</p>
-              </div>
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
-                <p className="font-bold text-blue-600 dark:text-blue-400">Active Patient</p>
-              </div>
-            </div>
-          </Card>
-
           {/* Quick Stats */}
           <Card className="
             bg-white dark:bg-slate-900
@@ -486,7 +437,17 @@ function PatientProfile() {
             <div className="space-y-3">
               <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
                 <span className="text-gray-600 dark:text-gray-400">Role</span>
-                <span className="font-bold text-gray-900 dark:text-gray-100">Patient</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100">Doctor</span>
+              </div>
+              <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
+                <span className="text-gray-600 dark:text-gray-400">Status</span>
+                <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm rounded">
+                  Active
+                </span>
+              </div>
+              <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-slate-700">
+                <span className="text-gray-600 dark:text-gray-400">Patients</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100">45</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Member Since</span>
@@ -537,5 +498,3 @@ function PatientProfile() {
     </div>
   );
 }
-
-export default PatientProfile;
