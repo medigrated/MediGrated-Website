@@ -26,6 +26,7 @@ function StatCard({ title, value, note }) {
 
 export default function PatientDashboard() {
   const { user } = useSelector((state) => state.auth || {});
+  const { globalSearchQuery } = useSelector((state) => state.search || {});
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null); // start as null -> guarded
   const [error, setError] = useState(null);
@@ -43,8 +44,8 @@ export default function PatientDashboard() {
 
     const controller = new AbortController();
 
-    async function fetchDashboard() {
-      setLoading(true);
+    async function fetchDashboard(isBackground = false) {
+      if (!isBackground) setLoading(true);
       setError(null);
 
       try {
@@ -71,13 +72,20 @@ export default function PatientDashboard() {
         setError(err.response?.data?.message || err.message || "Failed to load dashboard");
         setDashboard({});
       } finally {
-        setLoading(false);
+        if (!isBackground) setLoading(false);
       }
     }
 
     fetchDashboard();
 
-    return () => controller.abort();
+    const iv = setInterval(() => {
+      fetchDashboard(true);
+    }, 5000);
+
+    return () => {
+      controller.abort();
+      clearInterval(iv);
+    };
   }, [user]);
 
   // loading UI
@@ -108,10 +116,24 @@ export default function PatientDashboard() {
 
   // default safe accessors
   const healthScore = dashboard?.healthScore ?? "—";
-  const recentReports = Array.isArray(dashboard?.recentReports) ? dashboard.recentReports : [];
-  const family = Array.isArray(dashboard?.family) ? dashboard.family : [];
-  const recommendations = Array.isArray(dashboard?.recommendations) ? dashboard.recommendations : [];
+  const rawRecentReports = Array.isArray(dashboard?.recentReports) ? dashboard.recentReports : [];
+  const rawFamily = Array.isArray(dashboard?.family) ? dashboard.family : [];
+  const rawRecommendations = Array.isArray(dashboard?.recommendations) ? dashboard.recommendations : [];
   const quickSummary = dashboard?.quickSummary ?? "";
+
+  const query = (globalSearchQuery || "").toLowerCase();
+
+  const recentReports = rawRecentReports.filter(r => 
+    !query || (r.title && r.title.toLowerCase().includes(query))
+  );
+
+  const family = rawFamily.filter(f => 
+    !query || (f.name && f.name.toLowerCase().includes(query)) || (f.relation && f.relation.toLowerCase().includes(query))
+  );
+
+  const recommendations = rawRecommendations.filter(r => 
+    !query || (typeof r === 'string' && r.toLowerCase().includes(query))
+  );
 
   return (
     <div className="w-full space-y-6">

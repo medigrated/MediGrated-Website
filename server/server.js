@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 require('dotenv').config();
 const connectDB = require('./database/db');
 const cookieParser = require('cookie-parser');
@@ -37,6 +38,8 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/family', familyRoutes);
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

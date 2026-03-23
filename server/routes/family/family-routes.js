@@ -4,11 +4,12 @@ const {
     createGroup, joinGroup, getGroups, getGroupDetails,
     deleteGroup, removeMember, leaveGroup, getMembers,
     addMedicine, markTaken, skipDose, deleteMedicine, editMedicine, refillMedicine,
-    updatePhone,
+    updatePhone, getUserAlerts
 } = require('../../controllers/family/family-controller');
 const { authMiddleware } = require('../../controllers/auth/auth-controller');
 
 router.get('/', authMiddleware, getGroups);
+router.get('/alerts', authMiddleware, getUserAlerts);
 router.post('/', authMiddleware, createGroup);
 router.post('/join', authMiddleware, joinGroup);
 router.get('/:id', authMiddleware, getGroupDetails);

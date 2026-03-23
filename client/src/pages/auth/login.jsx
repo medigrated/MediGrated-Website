@@ -124,6 +124,7 @@ function AuthLogin() {
                 formData={formData}
                 setFormData={setFormData}
                 onSubmit={onSubmit}
+                isBtnLoading={isLoading}
               />
 
               <div className="mt-6 text-center">

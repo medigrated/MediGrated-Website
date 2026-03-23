@@ -10,10 +10,13 @@ const inMemoryUsers = [];
 
 //register
 const registerUser = async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role,
+        phone, gender, dateOfBirth, location, bio,
+        age, bloodType, allergies, medicalHistory, emergencyContact,
+        specialization, licenseNumber, experience, clinic,
+        department } = req.body;
 
     try {
-        // if DB not connected, fall back to in-memory registration
         const dbReady = mongoose.connection && mongoose.connection.readyState === 1;
         if (dbReady) {
             const existingUser = await User.findOne({ email });
@@ -25,13 +28,37 @@ const registerUser = async (req, res) => {
             }
 
             const hashPassword = await bcrypt.hash(password, 12);
-            const newUser = new User({
-                name,
-                email,
-                password: hashPassword,
-                role
-            });
+
+            // Build user data based on role
+            const userData = {
+                name, email, password: hashPassword, role,
+                phone: phone || null,
+                gender: gender || null,
+                dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+                location: location || null,
+                bio: bio || null,
+            };
+
+            if (role === 'patient') {
+                userData.age = age ? parseInt(age) : null;
+                userData.bloodType = bloodType || null;
+                userData.allergies = allergies || null;
+                userData.medicalHistory = medicalHistory || null;
+                userData.emergencyContact = emergencyContact || null;
+            } else if (role === 'doctor') {
+                userData.specialization = specialization || null;
+                userData.licenseNumber = licenseNumber || null;
+                userData.experience = experience ? parseInt(experience) : null;
+                userData.clinic = clinic || null;
+            } else if (role === 'admin') {
+                userData.department = department || null;
+            }
+
+            const newUser = new User(userData);
             await newUser.save();
+
+            const userResponse = newUser.toObject();
+            delete userResponse.password;
 
             const token = jwt.sign(
                 { id: newUser._id, role: newUser.role, email: newUser.email },
@@ -40,27 +67,22 @@ const registerUser = async (req, res) => {
             res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 60 * 60 * 1000, path: '/' }).json({
                 success: true,
                 message: 'User registered and logged in successfully',
-                user: {
-                    id: newUser._id,
-                    name: newUser.name,
-                    email: newUser.email,
-                    role: newUser.role
-                }
+                user: { id: userResponse._id, ...userResponse, _id: undefined, __v: undefined }
             });
             return;
         } else {
-            // use memory store
             if (inMemoryUsers.find(u => u.email === email)) {
                 return res.status(400).json({ success: false, message: 'User already exists with this email' });
             }
             const hashPassword = await bcrypt.hash(password, 12);
-            const newUser = { id: `mem_${Date.now()}`, name, email, password: hashPassword, role };
+            const newUser = { id: `mem_${Date.now()}`, name, email, password: hashPassword, role, phone, gender, dateOfBirth, location, bio, age, bloodType, allergies, medicalHistory, emergencyContact, specialization, licenseNumber, experience, clinic, department };
             inMemoryUsers.push(newUser);
             const token = jwt.sign({ id: newUser.id, role: newUser.role, email: newUser.email }, 'CLIENT_SECRET_KEY', { expiresIn: '60m' });
+            const { password: _, ...userWithoutPassword } = newUser;
             res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 60 * 60 * 1000, path: '/' }).json({
                 success: true,
                 message: 'User registered (in-memory) and logged in successfully',
-                user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role }
+                user: userWithoutPassword
             });
             return;
         }
@@ -118,19 +140,24 @@ const loginUser = async (req, res) => {
             { id: checkUser._id || checkUser.id, role: checkUser.role, email: checkUser.email },
             'CLIENT_SECRET_KEY', {expiresIn : '60m'}
         );
-        //what this does is, it generates a JWT token with the user's id, role, and email as payload, and signs it with a secret key. The token is set to expire in 60 minutes.
-        //process.env.JWT_SECRET_KEY should be used instead of 'CLIENT_SECRET_KEY' for safety.
 
-        //send token in cookie
+        // Build full user response
+        let userResponse;
+        if (checkUser.toObject) {
+            userResponse = checkUser.toObject();
+            delete userResponse.password;
+            userResponse.id = userResponse._id;
+            delete userResponse._id;
+            delete userResponse.__v;
+        } else {
+            const { password: _, ...rest } = checkUser;
+            userResponse = rest;
+        }
+
         res.cookie('token', token, { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 60 * 60 * 1000, path: '/' }).json({
             success: true,
             message: 'User logged in successfully',
-            user : {
-                email : checkUser.email,
-                name : checkUser.name,
-                role : checkUser.role,
-                id : checkUser._id
-            }
+            user: userResponse
         });
         //what this does is, it creates a JWT token with the user's id, role, and email as payload, and signs it with a secret key. The token is set to expire in 60 minutes.
         //Then, it sends the token as an HTTP-only cookie in the response, along with a success message and some user details (excluding the password).
@@ -300,11 +327,53 @@ const changePassword = async (req, res) => {
     }
 };
 
+const uploadAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+        
+        // Relative path to be served locally via express.static
+        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+        
+        const dbReady = mongoose.connection && mongoose.connection.readyState === 1;
+        if (dbReady) {
+            const updatedUser = await User.findByIdAndUpdate(
+                req.user.id,
+                { $set: { avatar: avatarUrl } },
+                { new: true, runValidators: true }
+            ).select('-password');
+
+            res.status(200).json({
+                success: true,
+                message: 'Avatar uploaded successfully',
+                user: updatedUser
+            });
+        } else {
+            const userIndex = inMemoryUsers.findIndex(u => u.id === req.user.id);
+            if (userIndex === -1) {
+                return res.status(404).json({ success: false, message: 'User not found' });
+            }
+            inMemoryUsers[userIndex].avatar = avatarUrl;
+            const { password, ...userWithoutPassword } = inMemoryUsers[userIndex];
+            res.status(200).json({
+                success: true,
+                message: 'Avatar uploaded successfully',
+                user: userWithoutPassword
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     logoutUser,
     authMiddleware,
     updateProfile,
-    changePassword
+    changePassword,
+    uploadAvatar
 };

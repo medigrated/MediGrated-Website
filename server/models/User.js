@@ -19,13 +19,29 @@ const userSchema = new mongoose.Schema({
         enum: ['patient', 'doctor', 'admin'],
         default: 'patient'
     },
-    // Phone in E.164 format e.g. +919876543210 — used for Twilio WhatsApp alerts
+    // Common profile fields
+    avatar: {
+        type: String,
+        default: null
+    },
     phone: {
         type: String,
         default: null
     },
-    // Common profile fields
+    gender: {
+        type: String,
+        enum: ['male', 'female', 'other', 'prefer-not-to-say'],
+        default: null
+    },
+    dateOfBirth: {
+        type: Date,
+        default: null
+    },
     location: {
+        type: String,
+        default: null
+    },
+    bio: {
         type: String,
         default: null
     },
@@ -62,7 +78,7 @@ const userSchema = new mongoose.Schema({
     },
     experience: {
         type: Number,
-        default: null // years of experience
+        default: null
     },
     clinic: {
         type: String,

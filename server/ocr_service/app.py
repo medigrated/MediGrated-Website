@@ -50,9 +50,9 @@ Tasks:
 1. Identify key test results
 2. Highlight abnormal values
 3. Explain in simple language
-4. Provide general health suggestions
+4. Provide general health suggestions what can be done for the particular values and also for improving the health
 5. Add disclaimer: "Consult a licensed doctor for medical advice."
-
+6. Dont use bold in the responses
 Medical Report:
 {extracted_text}
 """

@@ -485,9 +485,28 @@ const updatePhone = async (req, res) => {
   }
 };
 
+const getUserAlerts = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const groups = await Group.find({ members: userId });
+    const groupIds = groups.map(g => g._id);
+
+    // Get recent activities indicating a missed or skipped dose across all joined groups
+    const alerts = await ActivityLog.find({
+      groupId: { $in: groupIds },
+      status: { $in: ['missed', 'skipped'] }
+    }).sort({ timestamp: -1 }).limit(10).populate('groupId', 'name');
+
+    return res.json({ success: true, alerts });
+  } catch (err) {
+    console.error('getUserAlerts error', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   createGroup, joinGroup, getGroups, getGroupDetails,
   deleteGroup, removeMember, leaveGroup, getMembers,
   addMedicine, markTaken, skipDose, deleteMedicine, editMedicine, refillMedicine,
-  updatePhone
+  updatePhone, getUserAlerts
 };

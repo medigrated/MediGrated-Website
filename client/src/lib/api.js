@@ -14,6 +14,9 @@ export const authAPI = {
   checkAuth: () => api.get('/api/auth/check-auth'),
   updateProfile: (data) => api.put('/api/auth/profile', data),
   changePassword: (data) => api.put('/api/auth/change-password', data),
+  uploadAvatar: (data) => api.post('/api/auth/upload-avatar', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export default api;
