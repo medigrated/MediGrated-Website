@@ -1,1 +1,43 @@
-*.json
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Build output
+dist/
+build/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp / utility scripts (used during development)
+replace_classes.js
+replace_dashboard.js
+setup_global_css.js
+enhance_family_ui.js
+inject_medicine_auth.js
+inject_first_dose_prompt.js
+fix_darkmode.js
+fix_sidebar_dark.js
+upgrade_sidebar.js
+debug_frontend.js
+clear_logs_once.js
+
+# Archives
+*.zip
