@@ -26,6 +26,14 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Large model files
+server/model_v1/
+*.safetensors
+*.pkl
+
+# Uploaded files (user-generated)
+server/uploads/
+
 # Temp / utility scripts (used during development)
 replace_classes.js
 replace_dashboard.js
